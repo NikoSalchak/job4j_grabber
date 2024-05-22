@@ -15,9 +15,8 @@ import static org.quartz.SimpleScheduleBuilder.*;
 
 public class AlertRabbit {
     public static void main(String[] args) {
-        try {
+        try (Connection connection = getConnection()) {
             List<Long> store = new ArrayList<>();
-            Connection connection = getConnection();
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
             JobDataMap data = new JobDataMap();
