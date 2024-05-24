@@ -5,6 +5,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 
 import java.io.IOException;
 
@@ -26,7 +27,8 @@ public class HabrCareerParse {
             Element date = titleDate.child(0);
             String vacancyName = titleElement.text();
             String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-            System.out.printf("%s %s %s%n", vacancyName, date.attr("datetime"), link);
+            System.out.printf("%s %s %s%n", vacancyName,
+                    new HabrCareerDateTimeParser().parse(date.attr("datetime")), link);
         });
     }
 }
