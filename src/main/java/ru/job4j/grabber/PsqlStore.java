@@ -89,6 +89,14 @@ public class PsqlStore implements Store {
         }
     }
 
+    private Post getPostFromDataBase(ResultSet resultSet) throws SQLException {
+        return new Post(resultSet.getInt("id"),
+                resultSet.getString("name"),
+                resultSet.getString("link"),
+                resultSet.getString("text"),
+                resultSet.getTimestamp("created").toLocalDateTime());
+    }
+
     @Override
     public void save(Post post) {
         try (PreparedStatement statement = connection
@@ -110,14 +118,7 @@ public class PsqlStore implements Store {
         try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM post")) {
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    Post post = new Post(
-                            resultSet.getInt("id"),
-                            resultSet.getString("name"),
-                            resultSet.getString("link"),
-                            resultSet.getString("text"),
-                            resultSet.getTimestamp("created").toLocalDateTime()
-                            );
-                    posts.add(post);
+                    posts.add(getPostFromDataBase(resultSet));
                 }
             }
         } catch (SQLException e) {
@@ -133,11 +134,7 @@ public class PsqlStore implements Store {
             statement.setInt(1, id);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    post.setId(resultSet.getInt("id"));
-                    post.setTitle(resultSet.getString("name"));
-                    post.setLink(resultSet.getString("link"));
-                    post.setDescription(resultSet.getString("text"));
-                    post.setCreated(resultSet.getTimestamp("created").toLocalDateTime());
+                    post = getPostFromDataBase(resultSet);
                 }
             }
         } catch (SQLException e) {
