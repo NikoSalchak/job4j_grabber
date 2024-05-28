@@ -6,7 +6,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import ru.job4j.grabber.utils.DateTimeParser;
-import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 import ru.job4j.grabber.utils.Post;
 
 import java.io.IOException;
@@ -77,12 +76,5 @@ public class HabrCareerParse implements Parse {
             pageNumber++;
         }
         return listPosts;
-    }
-
-    public static void main(String[] args) {
-        HabrCareerParse habrCareerParse = new HabrCareerParse(new HabrCareerDateTimeParser());
-        for (Post post : habrCareerParse.list("http://career.habr.com")) {
-            System.out.println(post);
-        }
     }
 }

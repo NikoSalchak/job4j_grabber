@@ -1,14 +1,7 @@
 package ru.job4j.grabber;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 import ru.job4j.grabber.utils.Post;
-import org.jsoup.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,10 +14,6 @@ import java.util.Properties;
 
 public class PsqlStore implements Store {
     private Connection connection;
-    private static final String SOURCE_LINK = "http://career.habr.com";
-    public static final String PREFIX = "/vacancies?page=";
-    public static final String SUFFIX = "&q=Java%20developer&type=all";
-    private static final int PAGES = 5;
 
     public PsqlStore(Properties config) throws SQLException {
         try {
@@ -37,56 +26,6 @@ public class PsqlStore implements Store {
                 config.getProperty("jdbc.username"),
                 config.getProperty("jdbc.password")
                 );
-    }
-    private String retrieveDescription(String link) {
-        StringBuilder sb = new StringBuilder();
-        String ln = System.lineSeparator();
-        org.jsoup.Connection connection = Jsoup.connect(link);
-        Document document = null;
-        try {
-            document = connection.get();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Elements rows = document.select(".vacancy-description__text");
-        Element title = rows.select("h3").first();
-        sb.append(title.text()).append(ln);
-        for (Element element : rows.select(".style-ugc")) {
-            sb.append(element.text()).append(ln);
-        }
-        return sb.toString();
-    }
-
-    private Post createPost(Element row) {
-        Post post = new Post();
-        Element titleElement = row.select(".vacancy-card__title").first();
-        String vacancyName = titleElement.text();
-        String vacancyDate = row.select(".vacancy-card__date").first().child(0).attr("datetime");
-        String link = String.format("%s%s", SOURCE_LINK, titleElement.child(0).attr("href"));
-        String description = retrieveDescription(link);
-        post.setTitle(vacancyName);
-        post.setLink(link);
-        post.setDescription(description);
-        post.setCreated(new HabrCareerDateTimeParser().parse(vacancyDate));
-        return post;
-    }
-
-    public void parseData() {
-        int pageNumber = 1;
-        while (pageNumber <= PAGES) {
-            String fullLink = "%s%s%d%s".formatted(SOURCE_LINK, PREFIX, pageNumber, SUFFIX);
-            org.jsoup.Connection jsoupConnect = Jsoup.connect(fullLink);
-            Document document = null;
-            try {
-                document = jsoupConnect.get();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Elements rows = document.select(".vacancy-card__inner");
-            rows.stream().map(this::createPost).forEach(this::save);
-            pageNumber++;
-        }
     }
 
     private Post getPostFromDataBase(ResultSet resultSet) throws SQLException {
@@ -147,22 +86,6 @@ public class PsqlStore implements Store {
     public void close() throws Exception {
         if (connection != null) {
             connection.close();
-        }
-    }
-
-    public static void main(String[] args) {
-        Properties config = new Properties();
-        try (InputStream in = PsqlStore.class.getClassLoader().getResourceAsStream("rabbit.properties")) {
-            config.load(in);
-            try (PsqlStore psqlStore = new PsqlStore(config)) {
-                psqlStore.parseData();
-                for (Post post : psqlStore.getAll()) {
-                    System.out.println(post);
-                }
-                System.out.println(psqlStore.findById(25));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }
